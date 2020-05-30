@@ -75,13 +75,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         return list;
     }
-    public Boolean checkCustomer(String phone){
+    public Cursor checkCustomer(String phone){
         SQLiteDatabase db = this.getWritableDatabase();
         Cursor res = db.rawQuery("select * from "+TABLE_NAME+" where phone = "+phone,null);
-        if (res.getCount()==0){
-            return true ;
-        }
-        return false;
+//        if (res.getCount()==0){
+//            return true ;
+//        }
+        return res;
     }
 
 }
