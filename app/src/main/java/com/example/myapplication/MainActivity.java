@@ -35,6 +35,7 @@ public class MainActivity extends AppCompatActivity implements ZXingScannerView.
     private DatabaseHelper myDb ;
     private Vibrator vibrator;
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -51,7 +52,6 @@ public class MainActivity extends AppCompatActivity implements ZXingScannerView.
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if(isChecked== true){
                    openMain2();
-
                 }
             }
 
@@ -92,16 +92,21 @@ public class MainActivity extends AppCompatActivity implements ZXingScannerView.
     @Override
     public void handleResult(Result rawResult) {
         //day la raw
-        processRawResult(rawResult.getText());
+
+            processRawResult(rawResult.getText());
+
+    }
+    private void inserData(){
         Cursor checkGate = myDb.checkCustomer(phone);
         if (checkGate.getCount()==0){
             boolean result = myDb.insertData(name,phone);
             if (result){
                 Toast.makeText(this, "insert success", Toast.LENGTH_SHORT).show();
-                txtResult.setText("TRUE");
+               // txtResult.setText("TRUE");
             }else {
 
                 Toast.makeText(this, "insert false", Toast.LENGTH_SHORT).show();
+                showMessage("Hợp lệ","Tên :"+name+"SDT:"+phone);
             }
             try {
                 Thread.sleep(1000);
@@ -111,41 +116,46 @@ public class MainActivity extends AppCompatActivity implements ZXingScannerView.
         }
         else {
             QRCustomerModel cus = new QRCustomerModel();
-            while (checkGate.moveToNext()){
+            while (checkGate.moveToNext()) {
 
-              //  cus.setId(String.valueOf(checkGate.getInt(0)));
+                //  cus.setId(String.valueOf(checkGate.getInt(0)));
                 cus.setName(checkGate.getString(1));
                 cus.setPhone(checkGate.getString(2));
             }
             vibrator.vibrate(1000);
             txtResult.setText("ERROR ! CODE HAS BEEN USEDED");
-            showMessage("coda has benn used by /n","User :"+cus.getName()+"/n"+
-                    "Phone: "+cus.getPhone());
+            showMessage("coda has benn used by /n", "User :" + cus.getName() + "/n" +
+                    "Phone: " + cus.getPhone());
         }
-
     }
 
-
     private void processRawResult(String text) {
+        boolean checkCode = true ;
 
-        String chuoi = text;
+        if (text.startsWith("636f646562796476543939")){
+            String chuoi = text.substring(22);
+            String[] arr = chuoi.split("20");
+            StringBuilder output = new StringBuilder();
+            for (int i = 0; i < chuoi.length(); i+=2) {
+                String str = chuoi.substring(i, i+2);
+                output.append((char)Integer.parseInt(str, 16));
+            }
+            // System.out.println(output);
+            String[] nameAndPhone = output.toString().split("/");
+            name = nameAndPhone[0];
+            phone = nameAndPhone[1];
 
-        String[] arr = chuoi.split("20");
-        StringBuilder output = new StringBuilder();
-        for (int i = 0; i < chuoi.length(); i+=2) {
-            String str = chuoi.substring(i, i+2);
-            output.append((char)Integer.parseInt(str, 16));
+            inserData();
+           // txtResult.setText(text);
+
         }
-        // System.out.println(output);
-        String[] nameAndPhone = output.toString().split("/");
-         name = nameAndPhone[0];
-         phone = nameAndPhone[1];
-       txtResult.setText(text);
-        try {
-            Thread.sleep(500);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        else{
+            vibrator.vibrate(1000);
+            showMessage("Mã không hợp lệ","Bạn đang sử dụng mã ở nguồn khác");
+            checkCode = false;
+
         }
+
         scannerView.resumeCameraPreview(MainActivity.this);
 
     }
